@@ -1,8 +1,11 @@
 *.class
+*.jar
+*.zip
 
 in
 *.in
 *.out
+*.pout
 *.ac
 
 *.java.*

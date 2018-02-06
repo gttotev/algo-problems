@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.PrintWriter;
+import java.util.LinkedList;
 
 public class Lifeguards {
     public static void main(String[] args) throws java.io.IOException {
@@ -10,7 +11,8 @@ public class Lifeguards {
         int minCov = Integer.MAX_VALUE;
         int time = 0;
         int n = Integer.parseInt(in.readLine());
-        LinkedList<ShiftEdge> timeline = new LinkedList<>();
+        LinkedList<Integer> timeline = new LinkedList<>();
+        java.util.Iterator<Integer> it;
         ShiftEdge se;
         ShiftEdge[] she = new ShiftEdge[2 * n];
         for (i = 0; i < n; i++) {
@@ -20,6 +22,7 @@ public class Lifeguards {
         }
         java.util.Arrays.sort(she);
         st = she[0].t;
+        timeline.add(she[0].id);
         depth = 1;
         for (i = 1; i < she.length; i++) {
             se = she[i];
@@ -30,8 +33,16 @@ public class Lifeguards {
                 minCov = tspan;
             if (se.start) {
                 depth++;
+                timeline.add(se.id);
             } else {
                 depth--;
+                if (minCov > 0) {
+                    it = timeline.descendingIterator();
+                    while (it.next() != se.id);
+                    if (it.hasNext())
+                        minCov = 0;
+                    it.remove();
+                }
             }
             st = se.t;
         }
@@ -41,12 +52,11 @@ public class Lifeguards {
     }
     
     private static class ShiftEdge implements Comparable<ShiftEdge> {
-        int id, t, dep;
+        int id, t;
         boolean start;
         ShiftEdge(int id, int t, boolean s) {
             this.id = id;
             this.t = t;
-            this.dep = 0;
             this.start = s;
         }
         public int compareTo(ShiftEdge o) {
