@@ -1,12 +1,12 @@
-import java.util.Scanner;
-import java.io.File;
+import java.io.BufferedReader;
 import java.io.PrintWriter;
 
 public class Template {
     public static void main(String[] args) throws java.io.FileNotFoundException {
-        Scanner in = new Scanner(new File("template.in"));
-        PrintWriter out = new PrintWriter(new File("template.out"));
+        BufferedReader in = new BufferedReader(new java.io.FileReader("template.in"));
+        PrintWriter out = new PrintWriter(new java.io.File("template.out"));
         
+        in.close();
         out.close();
     }
 }
