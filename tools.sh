@@ -26,6 +26,7 @@ function usaco-write-test {
         echo Specify name of test!
         return 1
     fi
+    if [ ! -d tests/ ]; then mkdir tests/; fi
     vim tests/$1.in
     vim tests/$1.out
     echo Wrote test \'$1\'
