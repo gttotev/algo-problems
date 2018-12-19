@@ -2,8 +2,10 @@
 function usaco-run-test {
     local prog=`ls *.java`
     #javac $prog
+    #if [ $? != 0 ]; then return; fi
     prog=${prog%.java}
-    local iof=${prog,,}
+    #local iof=${prog,,}
+    local iof=`echo "$prog" | awk '{print tolower($0)}'`
     local rtests=`ls tests/*.in`
     if [ $1 ]; then rtests=tests/$1.in; fi
     local t

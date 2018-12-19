@@ -2,13 +2,17 @@
 *.jar
 *.zip
 
+*.java.*
+*.py.*
+
 in
 *.in
 *.out
 *.pout
 *.ac
 
-*.java.*
+*~
 *.old
 *.tmp
+*.bak
 *.swp
