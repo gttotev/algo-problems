@@ -1,8 +1,10 @@
 #!/bin/bash
 function usaco-run-test {
-    local prog=`ls *.java`
-    #javac $prog
-    #if [ $? != 0 ]; then return; fi
+    local prog=`ls *.java | head -n 1`
+    if [ $ALGO_COMPILE ]; then
+        javac $prog
+        if [ $? != 0 ]; then return; fi
+    fi
     prog=${prog%.java}
     #local iof=${prog,,}
     local iof=`echo "$prog" | awk '{print tolower($0)}'`
@@ -35,8 +37,12 @@ function algo-write-test {
 }
 
 function algo-run-test {
-    local prog=`ls *.class | head -n 1`
-    #javac $prog
+    local prog=`ls *.java | head -n 1`
+    if [ $ALGO_COMPILE ]; then
+        javac $prog
+        if [ $? != 0 ]; then return; fi
+    fi
+    prog=`ls *.class | grep -v '\$' | head -n 1`
     prog=${prog%.class}
     local rtests=`ls tests/*.in`
     if [ $1 ]; then rtests=tests/$1.in; fi
