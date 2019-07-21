@@ -1,3 +1,6 @@
+.DS_Store
+._*
+
 *.class
 *.jar
 *.zip
@@ -14,5 +17,9 @@ in
 *~
 *.old
 *.tmp
+*.tmp*.*
 *.bak
 *.swp
+
+/coursera/AlgsData/**/*.py
+/coursera/AlgsData/**/*.cpp

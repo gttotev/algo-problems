@@ -1,0 +1,63 @@
+	/*for (int e = 0; e < 100000; e++) {
+            String text = "";
+            int textLength = rand.nextInt(993) + 8;
+            for (int i = 0; i < textLength; i++) {
+                char c = (char)(rand.nextInt(26) + 'A');
+                text += c;
+            }
+            System.out.println(textLength);
+            String pattern = "";
+            int pattLength = rand.nextInt(8) + 1;
+            for (int i = 0; i < pattLength; i++) {
+                char c = (char)(rand.nextInt(26) + 'A');
+                pattern += c;
+            }
+            List<Integer> goodList = naiveGetOccurrences(text, pattern);
+            List<Integer> checkList = getOccurrences(text, pattern);
+            if (!goodList.equals(checkList)) {
+                System.err.println(text);
+                System.err.println(pattern);
+                System.err.println(goodList);
+                System.err.println(checkList);
+                break;
+            } else if (!checkList.isEmpty() && pattern.length() > 1) {
+                System.out.println(text);
+                System.out.println(pattern);
+                System.out.println(checkList);
+            }
+            System.out.println(e);
+        }*/
+	/*Random rand = new Random();
+        while (true) {
+            String text = "";
+            int pattLength = rand.nextInt(500) + 1;
+            int textLength = rand.nextInt(pattLength) + pattLength;
+            for (int i = 0; i < textLength; i++) {
+                char c = (char)(rand.nextInt(26) + 'A');
+                text += c;
+            }
+            System.out.println(textLength + " " + pattLength);
+            System.out.println(text);
+            long[] preCompHashes = hashAll(text, pattLength);
+            for (int i = 0; i <= textLength-pattLength; i++) {
+                String tPatt = text.substring(i, i+pattLength);
+                System.out.println(tPatt);
+            }
+        }*/
+	Random rand = new Random();
+        while (true) {
+            String text = "";
+            int pattLength = rand.nextInt(500) + 1;
+            int textLength = rand.nextInt(pattLength) + pattLength;
+            for (int i = 0; i < textLength; i++) {
+                char c = (char)(rand.nextInt(26) + 'A');
+                text += c;
+            }
+            long[] preCompHashes = hashAll(text, pattLength);
+            for (int i = 0; i <= textLength-pattLength; i++) {
+                String tPatt = text.substring(i, i+pattLength);
+                if (hash(tPatt) != preCompHashes[i]) {
+                    throw new RuntimeException("Hash mismatch at " + i);
+                }
+            }
+        }
