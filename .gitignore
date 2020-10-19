@@ -1,3 +1,8 @@
+*
+!/**/
+!*.*
+!Makefile
+
 .DS_Store
 ._*
 
@@ -13,6 +18,7 @@ in
 *.out
 *.pout
 *.ac
+*.ans
 
 *~
 *.old
