@@ -1,8 +1,4 @@
-*
-!/**/
-!*.*
-!Makefile
-
+# macOS
 .DS_Store
 ._*
 
@@ -10,22 +6,9 @@
 *.jar
 *.zip
 
-*.java.*
-*.py.*
-
-in
-*.in
-*.out
-*.pout
-*.ac
-*.ans
-
 *~
-*.old
 *.tmp
-*.tmp*.*
 *.bak
 *.swp
 
-/coursera/AlgsData/**/*.py
-/coursera/AlgsData/**/*.cpp
+tests/
