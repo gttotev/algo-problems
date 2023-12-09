@@ -6,6 +6,8 @@
 *.jar
 *.zip
 
+target/
+
 *~
 *.tmp
 *.bak
