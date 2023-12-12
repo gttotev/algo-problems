@@ -24,7 +24,23 @@ fn _part1() -> u64 {
 
 type Node = [u8; 3];
 
-fn part2() -> u64 {
+fn gcd(a: usize, b: usize) -> usize {
+    if b == 0 {
+        a
+    } else {
+        gcd(b, a % b)
+    }
+}
+
+fn lcm(mut x: usize, mut y: usize) -> usize {
+    if y > x {
+        (x, y) = (y, x);
+    }
+    let g = gcd(x, y);
+    x * y / g
+}
+
+fn part2() -> usize {
     let mut lines = io::stdin().lock().lines();
     let path = lines.next().unwrap().unwrap().into_bytes();
     lines.next();
@@ -41,22 +57,19 @@ fn part2() -> u64 {
             nodes.push(node);
         }
     }
-    
-    let mut res = 0;
-    let mut done = false;
-    while !done {
-        let p = if path[res % path.len()] == b'L' { 0 } else { 1 };
-        res += 1;
-        done = true;
-        for node in &mut nodes {
-            *node = network.get(node).unwrap()[p];
-            if node[2] != b'Z' {
-                done = false;
-            }
-        }
-    }
 
-    res as u64
+    let mut cycles = Vec::with_capacity(nodes.len());
+    for mut node in nodes {
+        let mut res = 0;
+        while node[2] != b'Z' {
+            let p = if path[res % path.len()] == b'L' { 0 } else { 1 };
+            node = network.get(&node).unwrap()[p];
+            res += 1;
+        }
+        // Verified path to and back to Z node of same length, divisible by path length
+        cycles.push(res / path.len());
+    }
+    cycles.iter().fold(1, |acc, x| lcm(acc, *x)) * path.len()
 }
 
 fn main() {
