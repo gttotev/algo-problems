@@ -1,21 +1,4 @@
-fn _part1(mut springs: Vec<u8>, i: usize, unknown: usize, broken: &[usize]) -> u64 {
-    if unknown == 0 {
-        if String::from_utf8(springs).unwrap().split_ascii_whitespace().map(|s| s.len()).collect::<Vec<_>>() == broken {
-            1
-        } else {
-            0
-        }
-    } else if springs[i] != b'?' {
-        _part1(springs, i + 1, unknown, broken)
-    } else {
-        springs[i] = b'#';
-        let broke = _part1(springs.clone(), i+1, unknown-1, broken);
-        springs[i] = b' ';
-        broke + _part1(springs, i+1, unknown-1, broken)
-    }
-}
-
-fn _fits(springs: &[u8], j: usize, b: usize) -> Option<usize> {
+fn fits(springs: &[u8], j: usize, b: usize) -> Option<usize> {
     let mut h = 0;
     if springs[j..j+b].iter().all(|&c| { if c == b'#' { h += 1; } c != b'.' })
         && (j == 0 || springs[j-1] != b'#')
@@ -25,26 +8,30 @@ fn _fits(springs: &[u8], j: usize, b: usize) -> Option<usize> {
     } else { None }
 }
 
-fn _part2(springs: &[u8], broken: &[usize], hcum: &[usize]) -> u64 {
-    if broken.len() == 0 {
-        if hcum.len() > 0 && hcum[0] > 0 { 0 } else { 1 }
-    } else if springs.len() < broken[0] {
-        0
-    } else {
-        let slen = springs.len();
-        let b = broken[0];
-        let mut res = 0;
-        for j in 0..=springs.len()-b {
-            if let Some(h) = _fits(springs, j, b) {
-                let sn = slen.min(j+b+1);
-                if h == hcum[0] - *hcum.get(sn).unwrap_or(&0) {
-                    res += _part2(&springs[sn..], &broken[1..], &hcum[sn..]);
+fn arrange(springs: &[u8], broken: &[usize], hcum: &[usize], memotab: &mut Vec<Vec<Option<u64>>>) -> u64 {
+    let (si, bi) = (springs.len(), broken.len());
+    if memotab[bi][si] == None {
+        memotab[bi][si] = Some(if broken.len() == 0 {
+            if hcum.len() > 0 && hcum[0] > 0 { 0 } else { 1 }
+        } else if springs.len() < broken[0] {
+            0
+        } else {
+            let slen = springs.len();
+            let b = broken[0];
+            let mut res = 0;
+            for j in 0..=springs.len()-b {
+                if let Some(h) = fits(springs, j, b) {
+                    let sn = slen.min(j+b+1);
+                    if h == hcum[0] - *hcum.get(sn).unwrap_or(&0) {
+                        res += arrange(&springs[sn..], &broken[1..], &hcum[sn..], memotab);
+                    }
                 }
+                if springs[j] == b'#' { break; }
             }
-            if springs[j] == b'#' { break; }
-        }
-        res
+            res
+        })
     }
+    memotab[bi][si].unwrap()
 }
 
 fn solve(part2: bool) -> u64 {
@@ -64,13 +51,8 @@ fn solve(part2: bool) -> u64 {
             Some(*state)
         }).collect();
         hcum.reverse();
-        let dp = _part2(&springs, &broken, &hcum);
-
-        // let springs = line[..space].replace(".", " ").into_bytes();
-        // let unknown = springs.iter().filter(|&&c| c == b'?').count();
-        // let recur = _part1(springs, 0, unknown, &broken);
-
-        // if dp != recur { dbg!(line, dp, recur); }
+        let mut memotab = vec![vec![None; springs.len()+1]; broken.len()+1];
+        let dp = arrange(&springs, &broken, &hcum, &mut memotab);
 
         res += dp;
     }
