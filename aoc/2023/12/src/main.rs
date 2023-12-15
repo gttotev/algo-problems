@@ -1,6 +1,6 @@
-fn _part1(mut springs: Vec<u8>, i: usize, unknown: usize, broken: &[u64]) -> u64 {
+fn _part1(mut springs: Vec<u8>, i: usize, unknown: usize, broken: &[usize]) -> u64 {
     if unknown == 0 {
-        if String::from_utf8(springs).unwrap().split_ascii_whitespace().map(|s| s.len() as u64).collect::<Vec<_>>() == broken {
+        if String::from_utf8(springs).unwrap().split_ascii_whitespace().map(|s| s.len()).collect::<Vec<_>>() == broken {
             1
         } else {
             0
@@ -15,38 +15,9 @@ fn _part1(mut springs: Vec<u8>, i: usize, unknown: usize, broken: &[u64]) -> u64
     }
 }
 
-fn _fits(springs: &[u8], j: usize, b: usize) -> bool {
-    springs[j..j+b].iter().all(|&c| c != b'.')
-        && (j == 0 || springs[j-1] != b'#')
-        && (j+b == springs.len() || springs[j+b] != b'#') 
-}
-
-fn _arrangements(springs: &[u8], broken: &[usize]) -> u64 {
-    let mut table = vec![vec![0u64; springs.len()]; broken.len()];
-    let mut lastb = broken[0];
-    for j in 0..=springs.len()-lastb {
-        if _fits(springs, j, lastb) { table[0][j] = 1; }
-    }
-
-    let mut boff = lastb + 1;
-    for (i, &b) in broken.iter().enumerate().skip(1) {
-        for j in boff..=springs.len()-b {
-            if !_fits(springs, j, b) { continue; }
-            // dbg!(i, j, b);
-            // table[i][j] = dbg!(&table[i-1][..j-lastb]).iter().sum();
-            table[i][j] = table[i-1][..j-lastb].iter().sum();
-        }
-        boff += b + 1;
-        lastb = b;
-    }
-
-    // dbg!(&table);
-    table.last().unwrap().iter().sum()
-}
-
-fn _fit2(springs: &[u8], j: usize, b: usize) -> Option<usize> {
+fn _fits(springs: &[u8], j: usize, b: usize) -> Option<usize> {
     let mut h = 0;
-    if springs[j..j+b].iter().all(|&c| { if c == b'?' { h += 1; } c != b'.' })
+    if springs[j..j+b].iter().all(|&c| { if c == b'#' { h += 1; } c != b'.' })
         && (j == 0 || springs[j-1] != b'#')
         && (j+b == springs.len() || springs[j+b] != b'#')
     {
@@ -54,80 +25,48 @@ fn _fit2(springs: &[u8], j: usize, b: usize) -> Option<usize> {
     } else { None }
 }
 
-fn _part2(springs: &[u8], broken: &[usize]) -> u64 {
-    let hcum: Vec<usize> = springs.iter().scan(0, |state, &c| {
-        if c == b'#' { *state += 1; }
-        Some(*state)
-    }).collect();
-
-    let mut table = vec![vec![0u64; springs.len()]; broken.len()];
-    let mut lastb = broken[0];
-    table[0] = (0..springs.len()).scan(0, |state, j| {
-        if j <= springs.len()-lastb {
-            if let Some(h) = _fit2(springs, j, lastb) {
-                if h + hcum[j+lastb-1] == lastb { *state += 1; } // End me.
+fn _part2(springs: &[u8], broken: &[usize], huse: usize, htot: usize) -> u64 {
+    if broken.len() == 0 {
+        if huse == htot { 1 } else { 0 }
+    } else if springs.len() < broken[0] {
+        0
+    } else {
+        let slen = springs.len();
+        let b = broken[0];
+        let mut res = 0;
+        for j in 0..=springs.len()-b {
+            if let Some(h) = _fits(springs, j, b) {
+                res += _part2(&springs[slen.min(j+b+1)..], &broken[1..], huse+h, htot);
             }
+            if springs[j] == b'#' { break; }
         }
-        Some(*state)
-    }).collect();
-    // for j in 0..=springs.len()-lastb {
-    //     table[0][j] = if j == 0 { 0 } else { table[0][j-1] };
-    //     if let Some(h) = _fit2(springs, j, lastb) {
-    //         if h + hcum[j+lastb-1] == lastb { table[0][j] += 1; }
-    //     }
-    // }
-
-    let mut boff = lastb + 1;
-    for (i, &b) in broken.iter().enumerate().skip(1) {
-        for j in boff..springs.len() {
-            table[i][j] = table[i][j-1];
-            if j <= springs.len()-b {
-                // dbg!(j, b);
-                if let Some(h) = _fit2(springs, j, b) {
-                    // if dbg!(h + hcum[j+b-1]) - dbg!(hcum[j-1]) == b { table[i][j] += table[i-1][j-lastb-1]; } // Ugh.
-                    if h + hcum[j+b-1] - hcum[j-1] == b { table[i][j] += table[i-1][j-lastb-1]; } // Ugh.
-                }
-            }
-        }
-        boff += b + 1;
-        lastb = b;
+        res
     }
-
-    // Final try here.
-    if table.len() == 1 { return *table[0].last().unwrap(); }
-    let mut res = 0;
-    let prev = &table[table.len()-2];
-    let b = lastb;
-    let htot = *hcum.last().unwrap();
-    lastb = broken[broken.len()-2];
-    for j in (boff-b-1..=springs.len()-b).rev() {
-        if let Some(h) = _fit2(springs, j, b) {
-            if h + htot - hcum[j-1] == b { res += prev[j-lastb-1]; }
-        }
-    }
-
-    // dbg!(&table);
-    // *table.last().unwrap().last().unwrap()
-    res
 }
 
-fn solve() -> u64 {
+fn solve(part2: bool) -> u64 {
     let mut res = 0;
     for line in std::io::stdin().lines() {
         let line = line.unwrap();
         let space = line.find(" ").unwrap();
-        let springs = line[..space].as_bytes();
-        let broken: Vec<usize> = line[space+1..].split(",").map(|s| s.parse().unwrap()).collect();
-        // let dp = arrangements(springs, &broken);
-        // let dp = dbg!(_part2(springs, &broken));
-        let dp = _part2(springs, &broken);
+        let mut springs: Vec<u8> = line[..space].into();
+        let mut broken: Vec<_> = line[space+1..].split(",").map(|s| s.parse().unwrap()).collect();
+        if part2 {
+            broken = broken.repeat(5);
+            springs = [&springs[..]; 5].join(&b'?');
+        }
 
-        let springs = line[..space].replace(".", " ").into_bytes();
-        let broken: Vec<u64> = line[space+1..].split(",").map(|s| s.parse().unwrap()).collect();
-        let unknown = springs.iter().filter(|&&c| c == b'?').count();
-        let recur = _part1(springs, 0, unknown, &broken);
+        let _hcum: Vec<usize> = springs.iter().scan(0, |state, &s| {
+            if s == b'#' { *state += 1; }
+            Some(*state)
+        }).collect();
+        let dp = _part2(&springs, &broken, 0, springs.iter().filter(|&&c| c == b'#').count());
 
-        if dp != recur { dbg!(line, dp, recur); }
+        // let springs = line[..space].replace(".", " ").into_bytes();
+        // let unknown = springs.iter().filter(|&&c| c == b'?').count();
+        // let recur = _part1(springs, 0, unknown, &broken);
+
+        // if dp != recur { dbg!(line, dp, recur); }
 
         res += dp;
     }
@@ -135,5 +74,6 @@ fn solve() -> u64 {
 }
 
 fn main() {
-    println!("Part 1: {}", solve());
+    println!("Part 2: {}", solve(true));
+    // println!("Part 1: {}", solve(false));
 }
