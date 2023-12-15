@@ -25,9 +25,9 @@ fn _fits(springs: &[u8], j: usize, b: usize) -> Option<usize> {
     } else { None }
 }
 
-fn _part2(springs: &[u8], broken: &[usize], huse: usize, htot: usize) -> u64 {
+fn _part2(springs: &[u8], broken: &[usize], hcum: &[usize]) -> u64 {
     if broken.len() == 0 {
-        if huse == htot { 1 } else { 0 }
+        if hcum.len() > 0 && hcum[0] > 0 { 0 } else { 1 }
     } else if springs.len() < broken[0] {
         0
     } else {
@@ -36,7 +36,10 @@ fn _part2(springs: &[u8], broken: &[usize], huse: usize, htot: usize) -> u64 {
         let mut res = 0;
         for j in 0..=springs.len()-b {
             if let Some(h) = _fits(springs, j, b) {
-                res += _part2(&springs[slen.min(j+b+1)..], &broken[1..], huse+h, htot);
+                let sn = slen.min(j+b+1);
+                if h == hcum[0] - *hcum.get(sn).unwrap_or(&0) {
+                    res += _part2(&springs[sn..], &broken[1..], &hcum[sn..]);
+                }
             }
             if springs[j] == b'#' { break; }
         }
@@ -56,11 +59,12 @@ fn solve(part2: bool) -> u64 {
             springs = [&springs[..]; 5].join(&b'?');
         }
 
-        let _hcum: Vec<usize> = springs.iter().scan(0, |state, &s| {
+        let mut hcum: Vec<usize> = springs.iter().rev().scan(0, |state, &s| {
             if s == b'#' { *state += 1; }
             Some(*state)
         }).collect();
-        let dp = _part2(&springs, &broken, 0, springs.iter().filter(|&&c| c == b'#').count());
+        hcum.reverse();
+        let dp = _part2(&springs, &broken, &hcum);
 
         // let springs = line[..space].replace(".", " ").into_bytes();
         // let unknown = springs.iter().filter(|&&c| c == b'?').count();
