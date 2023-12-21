@@ -1,65 +1,20 @@
-#![allow(dead_code)]
-use std::{collections::{HashSet, BinaryHeap}, cmp::Reverse};
+use std::{collections::BinaryHeap, cmp::Reverse};
 
-type Pos = (i32, i32);
-
-fn floodfill(pos: Pos, perim: &HashSet<Pos>, found: &mut HashSet<Pos>) -> u32 {
-    if found.contains(&pos) || perim.contains(&pos) { return 0; }
-    found.insert(pos);
-    let (i, j) = pos;
-    1
-        + floodfill((i, j+1), perim, found)
-        + floodfill((i, j-1), perim, found)
-        + floodfill((i+1, j), perim, found)
-        + floodfill((i-1, j), perim, found)
-}
-
-fn part1() -> u32 {
-    let mut perim = HashSet::new();
-
-    let mut pos = (0i32, 0i32);
-    let (mut mini, mut maxi, mut minj, mut maxj) = (0, 0, 0, 0);
-    for line in std::io::stdin().lines().flatten() {
-        let dir = line.as_bytes()[0];
-        let step: i32 = line[2..4].trim().parse().unwrap();
-        for _ in 0..step {
-            match dir {
-                b'R' => pos.1 += 1,
-                b'L' => pos.1 -= 1,
-                b'U' => pos.0 -= 1,
-                b'D' => pos.0 += 1,
-                _ => panic!("wat"),
-            }
-            perim.insert(pos);
-
-            mini = mini.min(pos.0);
-            maxi = maxi.max(pos.0);
-            minj = minj.min(pos.1);
-            maxj = maxj.max(pos.1);
-        }
-    }
-    dbg!(mini, minj);
-
-    // let mut printer = vec![vec![b'.'; (maxj-minj+1) as usize]; (maxi-mini+1) as usize];
-    // for line in printer {
-    //     println!("{}", String::from_utf8(line).unwrap());
-    // }
-
-    let mut found = HashSet::new();
-    floodfill((20+mini, 4+minj), &perim, &mut found) + perim.len() as u32 // input.txt
-    // floodfill((1, 1), &perim, &mut found) + perim.len() as u32 // sample.txt
-}
-
-const DIR: [u8; 4] = [b'R', b'D', b'L', b'U'];
-fn part2() -> i64 {
+const DIRS: [u8; 4] = [b'R', b'D', b'L', b'U'];
+fn solve(part2: bool) -> i64 {
     let mut vert = BinaryHeap::new();
     let mut pos = (0, 0);
     for line in std::io::stdin().lines().flatten() {
-        let dir = line.as_bytes()[0];
-        let step: i32 = line[2..4].trim().parse().unwrap();
-        // let ll = line.len();
-        // let dir = DIR[line.as_bytes()[ll-2] - b'0'];
-        // let step = i64::from_str_radix(&line[ll-7..ll-2], 16).unwrap();
+        let dir;
+        let step;
+        if part2 {
+            let ll = line.len();
+            dir = DIRS[(line.as_bytes()[ll-2] - b'0') as usize];
+            step = i64::from_str_radix(&line[ll-7..ll-2], 16).unwrap();
+        } else {
+            dir = line.as_bytes()[0];
+            step = line[2..4].trim().parse().unwrap();
+        }
         match dir {
             b'R' => pos.1 += step,
             b'L' => pos.1 -= step,
@@ -75,43 +30,57 @@ fn part2() -> i64 {
         }
     }
 
-    let mut wall: Vec<(i32, i32, i32)> = Vec::new();
-    while let Some((Reverse(j), mut ia, mut ib)) = vert.pop() {
+    let first = vert.pop().unwrap();
+    let mut res = 0;
+    let mut col = first.0.0;
+    let mut wall = vec![(first.1, first.2)];
+    while let Some((Reverse(j), ia, ib)) = vert.pop() {
         let wl = wall.len();
-        let mut ii = Some(wl);
-        for i in 0..wl {
-            let (wj, wia, wib) = wall[i];
-            if ib <= wia {
-                ii = Some(i);
-                break;
-            }
-
-            if ia == wib && (i == wl-1 || wall[i+1].1 - wib > 1) { continue; } // Assume connected
-            if ia <= wib {
-                ii = None;
-                let mut di = i;
-                while di < wl && ib >= wall[di].1 {
-                    let (wj, wia, wib) = wall[di];
-                    let span = ib.min(wib) - ia.max(wia) + 1;
-                    println!("X {:?} {:?} {}", (ia, ib), (wia, wib), span);
-
-                    di += 1;
-                }
-                break;
-            }
+        let mut ii = wl;
+        let delta = j - col;
+        for (i, &(wia, wib)) in wall.iter().enumerate() {
+            if ia <= wib && ii == wl { ii = i; }
+            res += (wib - wia + 1) * delta;
         }
-        if let Some(i) = ii {
-            if i < wl && ib == wall[i].1 { ib -= 1; }
-            if i > 0 && ia == wall[i-1].2 { ia += 1; }
-            wall.insert(i, (j, ia, ib));
+        col = j;
+
+        if ii == wl || ib < wall[ii].0 {
+            wall.insert(ii, (ia, ib));
+            continue;
         }
-        println!("{:?}", wall);
+
+        let (wia, wib) = wall[ii];
+        if ib == wia {
+            wall[ii].0 = ia;
+        } else if ia == wib {
+            wall[ii].1 = ib;
+            if ii < wl-1 && wall[ii+1].0 == ib {
+                wall[ii].1 = wall[ii+1].1;
+                wall.remove(ii+1);
+            }
+        } else if ia > wia && ib < wib {
+            res += ib - ia - 1;
+            wall[ii].1 = ia;
+            wall.insert(ii+1, (ib, wib));
+        } else if ia == wia {
+            res += ib - ia;
+            wall[ii].0 = ib;
+            if ib == wib {
+                res += 1;
+                wall.remove(ii);
+            }
+        } else if ib == wib {
+            res += ib - ia;
+            wall[ii].1 = ia;
+        } else {
+            panic!("{:?} {} {:?}", &wall, ii, (ia, ib));
+        }
     }
 
-    0
+    res
 }
 
 fn main() {
-    println!("Part 2: {}", part2());
-    // println!("Part 1: {}", part1());
+    println!("Part 2: {}", solve(true));
+    // println!("Part 1: {}", solve(false));
 }
