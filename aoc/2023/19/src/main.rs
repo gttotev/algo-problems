@@ -26,18 +26,15 @@ fn part1(lines: impl Iterator<Item = String>, workflows: &HashMap<String, Vec<Ru
     }).filter(|part| {
         let mut wf = "in";
         while wf != "A" && wf != "R" {
-            wf = if let Some(rule) = workflows[wf].iter().find(|&rule| {
+            wf = &workflows[wf].iter().find(|&rule| {
                 let p = part[rule.categ];
                 match rule.cmp {
                     RuleCmp::Less if p < rule.value as u32 => true,
                     RuleCmp::More if p > rule.value as u32 => true,
+                    RuleCmp::Any => true,
                     _ => false,
                 }
-            }) {
-                &rule.next
-            } else {
-                &workflows[wf].last().unwrap().next
-            };
+            }).unwrap().next;
         }
         wf == "A"
     }).flatten().sum()
