@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, VecDeque, HashSet};
 
 #[derive(Debug, Clone, PartialEq)]
 struct Module {
@@ -26,28 +26,11 @@ impl Module {
     }
 }
 
-fn part1() -> u64 {
-    let mut modules = HashMap::new();
-    for line in std::io::stdin().lines().flatten() {
-        let mid = line.find('>').unwrap();
-        let name = &line[1..mid-2];
-        if !modules.contains_key(name) {
-            modules.insert(name.to_owned(), Module::new());
-        }
-        modules.get_mut(name).unwrap().kind = line.as_bytes()[0];
-        for next in line[mid+2..].split(", ") {
-            modules.get_mut(name).unwrap().out.push(next.to_owned());
-            if !modules.contains_key(next) {
-                modules.insert(next.to_owned(), Module::new());
-            }
-            modules.get_mut(next).unwrap().conjunct.insert(name.to_owned(), 0);
-        }
-    }
-
+fn part1(mods: &HashMap<String, Module>) -> u64 {
     let mut res = [1000, 0];
-    let mods = modules.clone();
+    let mut modules = mods.clone();
+    let mut pulseq = VecDeque::new();
     for _ in 0..1000 {
-        let mut pulseq = VecDeque::new();
         for next in &mods["roadcaster"].out {
             pulseq.push_back(("roadcaster", &next[..], 0));
         }
@@ -66,6 +49,66 @@ fn part1() -> u64 {
     res[0] * res[1]
 }
 
+fn gcd(a: u64, b: u64) -> u64 {
+    if b == 0 {
+        a
+    } else {
+        gcd(b, a % b)
+    }
+}
+
+fn lcm(a: u64, b: u64) -> u64 {
+    (a / gcd(a, b)) * b
+}
+
+fn part2(mods: &HashMap<String, Module>) -> u64 {
+    if !mods.contains_key("rx") { return 0; }
+    let mut res = 1;
+    let mut modules = mods.clone();
+    let mut pulseq = VecDeque::new();
+    let mut invs: HashSet<_> = mods[  // Assume [invs] -> conj -> rx
+        mods["rx"].conjunct.keys().next().unwrap()
+    ].conjunct.keys().collect();
+    for i in 1..=1000000 {
+        for next in &mods["roadcaster"].out {
+            pulseq.push_back(("roadcaster", next, 0));
+        }
+
+        while let Some((from, to, pulse)) = pulseq.pop_front() {
+            if let Some(p) = modules.get_mut(to).unwrap().pulse(from, pulse) {
+                for next in &mods[to].out {
+                    pulseq.push_back((to, next, p));
+                }
+                if invs.contains(to) && p == 1 {
+                    res = lcm(res, i);
+                    invs.remove(to);
+                }
+            }
+        }
+        if invs.is_empty() { break; }
+    }
+
+    res
+}
+
 fn main() {
-    println!("Part 1: {}", part1());
+    let mut modules = HashMap::new();
+    for line in std::io::stdin().lines().flatten() {
+        let mid = line.find('>').unwrap();
+        let name = &line[1..mid-2];
+        if !modules.contains_key(name) {
+            modules.insert(name.to_owned(), Module::new());
+        }
+        modules.get_mut(name).unwrap().kind = line.as_bytes()[0];
+        for next in line[mid+2..].split(", ") {
+            modules.get_mut(name).unwrap().out.push(next.to_owned());
+            if !modules.contains_key(next) {
+                modules.insert(next.to_owned(), Module::new());
+            }
+            modules.get_mut(next).unwrap().conjunct.insert(name.to_owned(), 0);
+        }
+    }
+
+    println!("Part 2: {}", part2(&modules));
+    println!("Part 1: {}", part1(&modules));
 }
