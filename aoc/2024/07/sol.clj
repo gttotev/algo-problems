@@ -18,6 +18,7 @@
   (if (nil? t) [h]
     (let [rec (gencalc t)]
       (lazy-cat
+        (map #(parse-long (str % h)) rec)  ; part 2
         (map (partial + h) rec)
         (map (partial * h) rec)))))
 
@@ -34,7 +35,7 @@
 (comment
   (filter valid?
        (prepare sample))
-  (gencalc [2 3 2])
+  (gencalc [2 3 4])
 
   ,)
 
