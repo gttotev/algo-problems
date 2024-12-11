@@ -24,25 +24,28 @@
           (map-indexed vector grid)))
 
 (def turns [[-1 0] [0 1] [1 0] [0 -1]])
-(defn gget [grid [i j]] (get (get grid i []) j nil))
-(defn walk [grid ij t path segs loops]
+(defn walk [grid ij t path top loops hh]
   (let [tt (rem (inc t) 4)
-        nij (map + ij (turns t))]
-    (case (gget grid ij)
-      nil [path loops]
-      \#  (recur grid (map - ij (turns t)) tt
-                 path (conj segs {:pos (map (comp #(if (zero? %) nil %) abs *) ij (turns tt)) :dir t}) loops)
-      (recur grid nij t (conj path ij) segs
-             (if (or (contains? segs {:pos [(first ij) nil]  :dir tt})
-                     (contains? segs {:pos [nil (second ij)] :dir tt}))
-               (conj loops nij)
-               loops)))))
+        nij (map + ij (turns t))
+        npath (conj path [ij t])]
+    (if (contains? path [ij t]) true
+      (case (get-in grid ij)
+        nil (if top [path loops] false)
+        \#  (recur grid (map - ij (turns t)) tt path top loops)
+        (recur grid nij t npath top
+               (if (and top (get-in grid nij) (not= nij hh)
+                        (walk (assoc-in grid nij \#) hh 0 #{} false 0 hh))
+                 (conj loops nij)
+                 loops))))))
 
 (defn solve [txt]
   (let [grid (togrid txt)
         ij (findg grid)
-        res (walk grid ij 0 #{} #{} #{})]
-    (map count res)))
+        [path loops] (walk grid ij 0 #{} true #{} ij)
+        upath (set (map first path))]
+    (map count [upath loops])))
 
 (solve sample)
-(solve (slurp "06/input.txt"))
+
+(def input (slurp "06/input.txt"))
+(solve input)
