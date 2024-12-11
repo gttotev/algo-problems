@@ -14,3 +14,7 @@ target/
 *.swp
 
 tests/
+
+.nrepl-port
+.clj-kondo/
+.lsp/
