@@ -8,31 +8,56 @@
 
 (defn asum [a n]
   (/ (* n (+ a a n -1)) 2))
+(defn jsum [m j n]
+  (* (/ m 2) (asum j n)))
 
-(defn solve [txt]
+(defn solve1 [txt]
   (let [disk (prepare txt)
         idisk (map-indexed vector disk)
         upacc (fn [acc m n edisk]
                 (-> acc
-                    (update :sum + (* m (asum (:ii acc) n)))
+                    (update :sum + (jsum m (:ii acc) n))
                     (update :ii + n)
                     (assoc :edisk edisk)))]
-    (reduce
-      (fn [acc [i len]]
-        (if (even? i)
-          (let [edisk (:edisk acc)
-                h (first edisk)]
-            (upacc acc (/ i 2) (if (= (first h) i) (second h) len) edisk))
-          (loop [left len
-                 res acc]
-            (let [[[j avail] & t] (:edisk res)]
-              (cond
-                (< j i) (reduced res)
-                (zero? left) res
-                (>= left avail) (recur (- left avail) (upacc res (/ j 2) avail t))
-                (<  left avail) (upacc res (/ j 2) left (cons [j (- avail left)] t)))))))
-      {:edisk (reverse (take-nth 2 idisk)) :ii 0 :sum 0} 
-      idisk)))
+    (:sum
+      (reduce
+       (fn [acc [i len]]
+         (if (even? i)
+           (let [edisk (:edisk acc)
+                 [j jlen] (first edisk)]
+             (upacc acc i (if (= j i) jlen len) edisk))
+           (loop [left len
+                  res acc]
+             (let [[[j avail] & t] (:edisk res)]
+               (cond
+                 (< j i) (reduced res)
+                 (zero? left) res
+                 (>= left avail) (recur (- left avail) (upacc res j avail t))
+                 (<  left avail) (upacc res j left (cons [j (- avail left)] t)))))))
+       {:edisk (reverse (take-nth 2 idisk)) :ii 0 :sum 0}
+       idisk))))
 
-(solve sample)
-(:sum (solve input))
+(solve1 sample)
+(solve1 input)
+
+(defn solve2 [txt]
+  (let [trips (second
+                (reduce (fn [[sum res] [i x]]
+                          [(+ sum x) (conj res [i sum x])])
+                     [0 []] (map-indexed vector (prepare txt))))
+        blanks (take-nth 2 (rest trips))
+        files (reverse (take-nth 2 trips))]
+    (second
+      (reduce
+        (fn [[blanks sum] [fi fj flen]]
+          (if-let [[i [bi bj blen]]
+                   (some (fn [ib]
+                           (let [[bi bj blen] (second ib)]
+                             (and (< bi fi) (>= blen flen) ib)))
+                         (map-indexed vector blanks))]
+            [(assoc blanks i [bi (+ bj flen) (- blen flen)]) (+ (jsum fi bj flen) sum)]
+            [blanks (+ (jsum fi fj flen) sum)]))
+        [(vec blanks) 0] files))))
+
+(solve2 sample)
+(solve2 input)
