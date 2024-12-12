@@ -96,7 +96,7 @@
 ..........")
   (def grid (prepare T))
   (def alltowers (find-towers grid))
-  (def towers (dissoc alltowers \#) )
+  (def towers (dissoc alltowers \#))
   (def pairs (->> towers vals (mapcat combos)))
   (def anodes (set (mapcat (partial apply (partial find-all-antinodes (valid? grid))) pairs)))
   (count anodes)
