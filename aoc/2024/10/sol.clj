@@ -17,6 +17,7 @@
 (defn prepare [txt]
   (->> txt
        clojure.string/split-lines
+       (map clojure.string/trim)
        (mapv (partial mapv #(Character/digit % 10)))))
 
 (def mapiv (partial map-indexed vector))
@@ -30,8 +31,7 @@
     [] (mapiv grid)))
 
 (defn find9s [grid prev ij]
-  (let [[i j] ij
-        cur (get-in grid ij -1)]
+  (let [cur (get-in grid ij -1)]
     (cond
       (not= (inc prev) cur) #{}
       (= cur 9) #{ij}
@@ -41,7 +41,16 @@
                 #(find9s grid cur (map + ij %))
                 [[0 1] [0 -1] [1 0] [-1 0]])))))
 
-(defn solve [txt]
+(defn count-trails [grid prev ij]
+  (let [cur (get-in grid ij -1)]
+    (cond
+      (not= (inc prev) cur) 0
+      (= cur 9) 1
+      :else (reduce + (map
+                        #(count-trails grid cur (map + ij %))
+                        [[0 1] [0 -1] [1 0] [-1 0]])))))
+
+(defn solve1 [txt]
   (let [grid (prepare txt)]
     (->> grid
          find-trailheads
@@ -50,7 +59,23 @@
                 (partial find9s grid -1)))
          (reduce +))))
 
-(solve sample)
+(solve1 sample)
 
 (def input (slurp "10/input.txt"))
-(solve input)
+(solve1 input)
+
+(defn solve2 [txt]
+  (let [grid (prepare txt)]
+    (->> grid
+         find-trailheads
+         (map (partial count-trails grid -1))
+         (reduce +))))
+
+(solve2 sample)
+(solve2 "012345
+        123456
+        234567
+        345678
+        416789
+        567891")
+(solve2 input)
