@@ -67,13 +67,39 @@
     {} igrid))
 
 (defn solve1 [txt]
-  (let [grid (prepare txt)
-        tovisit (get-tovisit grid)]
-    (->> (to-igrid grid tovisit)
+  (let [grid (prepare txt)]
+    (->> (to-igrid grid (get-tovisit grid))
          calc-area-perim
          vals
          (map #(apply * %))
          (reduce +))))
+
+(defn calc-region-fences [igrid]
+  (reduce-kv
+    (fn [regions i row]
+      (reduce-kv
+        (fn [regions j c]
+          (let [[fcol frow] (->> [i j]
+                                 neighbors
+                                 (map #(and (not= c (get-in igrid %)) %))
+                                 (split-at 2)
+                                 (map (partial filter identity)))
+                insert (fn [v x] (conj (if (or (empty? v) (not= (peek v) (dec x))) v (pop v)) x))
+                regions (reduce (fn [reg [ii j]] (update-in reg [c :row [i ii]] insert j)) regions frow)
+                regions (reduce (fn [reg [i jj]] (update-in reg [c :col [j jj]] insert i)) regions fcol)]
+            regions))
+        regions row))
+    {} igrid))
+
+(defn solve2 [txt]
+  (let [grid (prepare txt)
+        igrid (to-igrid grid (get-tovisit grid))
+        areas (frequencies (apply concat igrid))
+        fences (-> igrid
+                   calc-region-fences
+                   (update-vals #(->> % vals (mapcat vals) (apply concat) count)))
+        prices (merge-with * areas fences)]
+    (->> prices vals (reduce +))))
 
 (solve1 sample1)
 (solve1 sample2)
@@ -81,3 +107,21 @@
 
 (def input (slurp "12/input.txt"))
 (solve1 input)
+
+(solve2 sample1)
+(solve2 sample2)
+(solve2 sample3)
+(solve2
+  "EEEEE
+   EXXXX
+   EEEEE
+   EXXXX
+   EEEEE")
+(solve2
+  "AAAAAA
+  AAABBA
+  AAABBA
+  ABBAAA
+  ABBAAA
+  AAAAAA")
+(solve2 input)
